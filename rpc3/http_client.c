@@ -37,10 +37,10 @@ void read_file(char *host){
 	if(http_request2_1_arg.fd == -1){
 		printf("%s\n", "Le fichier n'existe pas");
 	}else{
-			do {
-				resultat = http_request2_1(&http_request2_1_arg,clnt);
-				printf("%s\n",resultat->char_read);
-			} while(resultat->byte_read_nbr<20);
+		do {
+			resultat = http_request2_1(&http_request2_1_arg,clnt);
+			printf("%s\n",resultat->char_read);
+		} while(resultat->byte_read_nbr !=0);
 	}
 }
 

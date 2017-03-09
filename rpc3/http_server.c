@@ -6,6 +6,8 @@
 
 
 #include "http.h"
+#include <unistd.h>
+#include <fcntl.h>
 
 void *
 http_null_1_svc(void *argp, struct svc_req *rqstp)
@@ -26,7 +28,7 @@ http_request1_1_svc(data1 *argp, struct svc_req *rqstp)
 	char *pos;
 	char buffer[256];
 	char root[256] = "public_html";
-	FILE* fichier;
+	int fichier;
 
   /* Verification de la demande*/
   char *tok = strtok(argp->request, " ");
@@ -39,8 +41,9 @@ http_request1_1_svc(data1 *argp, struct svc_req *rqstp)
       }
       strcat(root, tok);
       printf("Tentative d'ouverture de -%s-\n",root);
-			fichier = fopen(root, "r");
-			if(fichier == NULL){//Le fichier demandé n'existe pas
+			fichier = open(root, O_RDONLY);
+      result.fd = fichier;
+			if(fichier == -1){//Le fichier demandé n'existe pas
 				result.fd=-1;
 			}
 	}else{
@@ -55,12 +58,15 @@ http_request2_1_svc(data2 *argp, struct svc_req *rqstp)
 {
   char *buffer;
 	static response  result;
+  int byteRead=-1;
 	if (argp->fd != -1){
       result.fd = argp->fd;
-  		printf("Envoi des données...\n");
-      fgets(buffer,BUFFER_SIZE,(FILE *)argp->fd);
+      byteRead=read(argp->fd,buffer,BUFFER_SIZE);
+      result.byte_read_nbr = byteRead;
       strcpy(result.char_read,buffer);
-			// fclose(fichier) close après que tout a était lu
+      if(byteRead == 0){ // Si on arrive au bout du fichier on le ferme
+        close(argp->fd);
+      }
 	}
 	return &result;
 }
