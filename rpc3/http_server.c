@@ -7,8 +7,6 @@
 
 #include "http.h"
 
-
-
 void *
 http_null_1_svc(void *argp, struct svc_req *rqstp)
 {
@@ -24,73 +22,45 @@ http_null_1_svc(void *argp, struct svc_req *rqstp)
 response *
 http_request1_1_svc(data1 *argp, struct svc_req *rqstp)
 {
-
-  static response  result;
-  char port[8];
-    char *pos;
-    char buffer[256];
-    char root[256] = "public_html";
-    FILE* fichier = NULL;
-
 	static response  result;
-	char port[8];
-  	char *pos;
-  	char buffer[256];
-  	char root[256] = "public_html";
-  	FILE* fichier = NULL;
-	 /* Renseignement du port d'écoute */
-  	printf("Port d'écoute : ");
-  	fgets(port, 8, stdin);
-  	if ((pos=strchr(port, '\n')) != NULL) *pos = '\0';
-	if(strlen(port)==0){
-     		port[0] = '8';
-     		port[1] = '0';
-  	}
+	char *pos;
+	char buffer[256];
+	char root[256] = "public_html";
+	FILE* fichier;
 
-    /* Verification de la demande*/
-    char *tok = strtok(argp->request, " ");
-
-
+  /* Verification de la demande*/
+  char *tok = strtok(argp->request, " ");
   if(strcmp(tok, "GET") == 0){
       printf("Requete acceptée\n");
-  //On récupère la page demandée dans tok
+  		//On récupère la page demandée dans tok
       tok = strtok(NULL, " ");
       if(strcmp(tok, "/") == 0){
           strcat(tok, "index.html");
       }
       strcat(root, tok);
       printf("Tentative d'ouverture de -%s-\n",root);
-
-    }else{
+			fichier = fopen(root, "r");
+			if(fichier == NULL){//Le fichier demandé n'existe pas
+				result.fd=-1;
+			}
+	}else{
       printf("Requete rejetée\n");
-      /* Envoie du message au client */
-      char buffer[32] = "Bad Request";
-      //result.fd = -1;
-      memcpy(result.char_read,buffer);
-      result.byte_read_nbr = 12;
-      return &result;
+			result.fd=-1;
   }
-  fichier = fopen(root, "r");
-  result.fd = fichier;
-  memcpy(result.char_read,fichier);
-  result.byte_read_nbr = sizeof(fichier);
-
- return &result;
+ 	return &result;
 }
 
 response *
 http_request2_1_svc(data2 *argp, struct svc_req *rqstp)
 {
-
+  char *buffer;
 	static response  result;
-
-      		if (argp->fd != -1 || argp->fd != (int) NULL){
-          		printf("Envoi des données...\n");
-          		while(fgetc(result->char_read)-1 != NULL){
-	          
-          		}
-			fclose();
-      		}
-    
+	if (argp->fd != -1){
+      result.fd = argp->fd;
+  		printf("Envoi des données...\n");
+      fgets(buffer,BUFFER_SIZE,(FILE *)argp->fd);
+      strcpy(result.char_read,buffer);
+			// fclose(fichier) close après que tout a était lu
+	}
 	return &result;
 }

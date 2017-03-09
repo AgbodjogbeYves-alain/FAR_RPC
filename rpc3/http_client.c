@@ -5,32 +5,43 @@
  */
 
 #include "http.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netdb.h>
+CLIENT *clnt;
 
-
-int checkQuery(char *query){
-	reponse *resultat;
-	data1 http_request1_1_arg;
-  	 /* Demande de rentrer un message */
-  	memcpy(&http_request1_1_arg.request, &query, sizeof(query));
-  	resultat = http_request1_1(&http_request1_1_arg, clnt);
-  	return resultat->fd;
-}
-
-int read_file(int fd){
-	reponse *resultat;
+void read_file(char *host){
+	response *resultat;
 	data2 http_request2_1_arg;
-	http_request2_1_arg.fd = fd;
-	resultat = http_request2_1(&http_request2_1_arg, clnt);
-	return resultat;
+	data1 request1;
+	char ressource [256]="";
+	printf("%s\n", "Entrer la ressource désirée (par default : index.html):");
+	fgets(ressource,sizeof(ressource),stdin);
+	if(strlen(ressource) == 1){
+		strcpy(ressource,"index.html");
+	}
+	//supprimer les retours à la ligne
+	strtok(ressource, "\n");
+
+	char *header;
+	header = malloc(sizeof(ressource));
+	strcpy(header,"GET /");
+	strcat(header,ressource);
+	strcat(header," HTTP/1.1\r\nHost: ");
+	strcat(header,host);
+	strcat(header,"\r\n\r\n");
+
+	strcpy(request1.request,header);
+	http_request2_1_arg.fd = http_request1_1(&request1, clnt)->fd;
+	if(http_request2_1_arg.fd == -1){
+		printf("%s\n", "Le fichier n'existe pas");
+	}else{
+			do {
+				resultat = http_request2_1(&http_request2_1_arg,clnt);
+				printf("%s\n",resultat->char_read);
+			} while(resultat->byte_read_nbr<20);
+	}
 }
 
 
@@ -44,7 +55,7 @@ http_1(char *host)
 	data1  http_request1_1_arg;
 	response  *result_3;
 	data2  http_request2_1_arg;
-	
+
 
 #ifndef	DEBUG
 	clnt = clnt_create (host, HTTP, VERSION_UN, "udp");
@@ -62,7 +73,7 @@ http_1(char *host)
 	if (result_2 == (response *) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
-	
+
 	result_3 = http_request2_1(&http_request2_1_arg, clnt);
 	if (result_3 == (response *) NULL) {
 		clnt_perror (clnt, "call failed");
@@ -84,7 +95,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 	host = argv[1];
-	http_1 (host);
+	clnt = clnt_create (host, HTTP, VERSION_UN, "udp");
+	read_file(host);
 
 exit (0);
 }
