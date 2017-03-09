@@ -54,7 +54,7 @@ http_request1_1_svc(data1 *argp, struct svc_req *rqstp)
       return &result;
   }
   fichier = fopen(root, "r");
-  //result.fd = fgetc(fichier);
+  result.fd = fichier;
   memcpy(result.char_read,fichier);
   result.byte_read_nbr = sizeof(fichier);
  return &result;
